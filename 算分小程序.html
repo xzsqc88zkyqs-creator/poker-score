@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>书宁的专属计分板</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background: #121212; color: #e0e0e0; padding: 20px; margin: 0; }
+        h2 { text-align: center; color: #d4af37; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .player-card { background: #1e1e1e; padding: 15px 10px; border-radius: 12px; text-align: center; position: relative; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .name-input { width: 90%; background: transparent; color: #fff; border: none; text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 10px; border-bottom: 1px dashed #555; }
+        .name-input:focus { outline: none; border-bottom: 1px solid #d4af37; }
+        .score-display { font-size: 28px; font-weight: bold; margin: 15px 0; }
+        .score-input { width: 80%; padding: 8px; background: #2a2a2a; color: #fff; border: 1px solid #444; border-radius: 6px; text-align: center; }
+        .score-input:focus { outline: none; border-color: #d4af37; }
+        .btn-group { display: flex; gap: 10px; }
+        button { padding: 15px 20px; border: none; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; font-size: 18px; transition: transform 0.1s; }
+        button:active { transform: scale(0.98); }
+        .btn-calc { background: #d4af37; color: #121212; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2); }
+        .btn-reset { background: #8b0000; color: #fff; box-shadow: 0 4px 15px rgba(139, 0, 0, 0.3); }
+        .chip-anim { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); font-weight: bold; font-size: 20px; opacity: 0; pointer-events: none; }
+        .win { color: #4caf50; }
+        .lose { color: #f44336; }
+    </style>
+</head>
+<body>
+    <h2>当前局数：<span id="round">1</span></h2>
+    <div class="grid" id="players"></div>
+    <div class="btn-group">
+        <button class="btn-reset" onclick="resetAll()">一键清空</button>
+        <button class="btn-calc" onclick="nextRound()">结算本轮</button>
+    </div>
+
+    <script>
+        let players = Array.from({length: 6}, (_, i) => ({ name: '玩家' + (i+1), score: 0 }));
+        let round = 1;
+
+        function renderInit() {
+            const container = document.getElementById('players');
+            container.innerHTML = players.map((p, i) => `
+                <div class="player-card">
+                    <input class="name-input" value="${p.name}" onchange="players[${i}].name=this.value">
+                    <div id="anim-${i}" class="chip-anim"></div>
+                    <div class="score-display" id="score-${i}">${p.score}</div>
+                    <input type="number" class="score-input" id="input-${i}" placeholder="本轮得分">
+                </div>
+            `).join('');
+            document.getElementById('round').innerText = round;
+        }
+
+        function nextRound() {
+            players.forEach((p, i) => {
+                let inputField = document.getElementById(`input-${i}`);
+                let inputVal = parseInt(inputField.value) || 0;
+                
+                if (inputVal !== 0) {
+                    p.score += inputVal;
+                    document.getElementById(`score-${i}`).innerText = p.score;
+                    
+                    let anim = document.getElementById(`anim-${i}`);
+                    anim.innerText = inputVal > 0 ? '+' + inputVal : inputVal;
+                    anim.className = 'chip-anim ' + (inputVal > 0 ? 'win' : 'lose');
+                    
+                    anim.style.transition = 'none';
+                    anim.style.opacity = '1';
+                    anim.style.top = '20px';
+                    
+                    setTimeout(() => {
+                        anim.style.transition = 'all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                        anim.style.opacity = '0';
+                        anim.style.top = '-20px';
+                    }, 50);
+                }
+                inputField.value = ''; 
+            });
+            round++;
+            document.getElementById('round').innerText = round;
+        }
+
+        function resetAll() {
+            if(confirm('确定要清空所有数据重新开始吗？')) {
+                players.forEach(p => p.score = 0);
+                round = 1;
+                renderInit();
+            }
+        }
+
+        renderInit();
+    </script>
+</body>
+</html>
